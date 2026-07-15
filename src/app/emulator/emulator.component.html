@@ -1,0 +1,115 @@
+<div class="terminal-container">
+  <!-- Header / Device Status HUD -->
+  <header class="terminal-header">
+    <div class="brand">WizarPOS Emul-v1</div>
+    <div class="status-indicator" [class.connected]="state.isAuthenticated()">
+      {{
+        state.isAuthenticated()
+          ? 'ONLINE (' + state.terminalMode() + ')'
+          : 'DISCONNECTED'
+      }}
+    </div>
+  </header>
+
+  <!-- Panel 1: Clock-In Form (Unauthenticated State) -->
+  @if (!state.isAuthenticated()) {
+    <section class="auth-panel">
+      <h3>Attendant Clock-In</h3>
+      <form [formGroup]="clockInForm" (ngSubmit)="onClockIn()">
+        <div class="form-group">
+          <label for="terminalId">Terminal Hardware ID</label>
+          <input
+            id="terminalId"
+            formControlName="terminalId"
+            placeholder="e.g., WIZARPOS-TG-042"
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="pin">Employee Secure PIN</label>
+          <input
+            id="pin"
+            type="password"
+            formControlName="pin"
+            placeholder="••••"
+            maxlength="6"
+          />
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="clockInForm.invalid"
+          class="btn-primary"
+        >
+          Verify &amp; Open Shift
+        </button>
+      </form>
+    </section>
+  } @else {
+    <!-- Panel 2: Active Shift HUD & Operations Dashboard -->
+    <section class="hud-panel">
+      <div class="hud-meta">
+        <div>
+          <strong>Shift ID:</strong>
+          <code>{{ state.activeShift()?.shiftId }}</code>
+        </div>
+        <div>
+          <strong>Device ID:</strong> {{ state.activeShift()?.terminalId }}
+        </div>
+      </div>
+      <button (click)="onCloseShift()" class="btn-danger btn-sm">
+        Force Handover / Close Shift
+      </button>
+    </section>
+
+    <!-- Dynamic Layout Engine (Reacts dynamically to EXPRESS vs STRICT payloads) -->
+    <section
+      class="nozzle-layout"
+      [class.express-mode]="state.terminalMode() === 'EXPRESS'"
+    >
+      <h3>Active Dispensers</h3>
+
+      @if (state.terminalMode() === 'STRICT') {
+        <!-- Strict Mode: Displays full context map, lane identifiers, and status -->
+        <div class="strict-grid">
+          @for (lane of state.activeShift()?.lanes; track lane) {
+            <div class="lane-card">
+              <span class="lane-badge">Lane {{ lane }}</span>
+              <div class="nozzle-status status-ready">Ready</div>
+            </div>
+          }
+        </div>
+      } @else {
+        <!-- Express Mode: Minimizes complex layout steps into quick-action tags -->
+        <div class="express-banner">
+          Running in Express Bypass Mode. Lane verification bypassed by core
+          configurations.
+        </div>
+      }
+    </section>
+
+    <!-- Panel 3: Payment Request Generator -->
+    <section class="payment-panel">
+      <h3>Quick Pay Console</h3>
+      <div class="keypad-display">
+        {{ transactionAmount() | number : '1.0-0' }}
+        <span class="currency">XOF</span>
+      </div>
+
+      <div class="numpad-grid">
+        @for (num of [1, 2, 3, 4, 5, 6, 7, 8, 9]; track num) {
+          <button (click)="pressKey(num)">{{ num }}</button>
+        }
+        <button (click)="clearKeys()" class="btn-clear">C</button>
+        <button (click)="pressKey(0)">0</button>
+        <button
+          (click)="triggerPayment()"
+          [disabled]="transactionAmount() <= 0"
+          class="btn-pay"
+        >
+          Pay
+        </button>
+      </div>
+    </section>
+  }
+</div>
