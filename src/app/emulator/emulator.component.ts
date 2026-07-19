@@ -17,6 +17,7 @@ import { TerminalStateService } from '../terminal-state.service';
 })
 export class EmulatorComponent {
   clockInForm: FormGroup;
+  paymentForm: FormGroup;
   transactionAmount = signal<number>(0);
 
   constructor(
@@ -29,6 +30,10 @@ export class EmulatorComponent {
         [Validators.required, Validators.pattern(/^WIZARPOS-.+$/)],
       ],
       pin: ['', [Validators.required, Validators.minLength(4)]],
+    });
+
+    this.paymentForm = this.fb.group({
+      customerId: ['158769', [Validators.required]] // Valeur par défaut pour tester
     });
   }
 
@@ -70,14 +75,18 @@ export class EmulatorComponent {
 
   triggerPayment() {
     const val = this.transactionAmount();
-    if (val <= 0) return;
+    if (val <= 0 || this.paymentForm.invalid) return;
 
-    this.state.initiateTransaction(val).subscribe({
+    const { customerId } = this.paymentForm.value;
+
+    // Call the REAL server instead of the mock
+    this.state.processRealTransaction(val, customerId).subscribe({
       next: (res) => {
-        alert(`Transaction successful! Gateway Receipt: ${res.receiptNumber}`);
+        // Adapt alert to whatever the real server responds with
+        alert(`Transaction envoyée au serveur distant avec succès !`);
         this.clearKeys();
       },
-      error: (err) => alert(`Transaction Refused: ${err.message}`),
+      error: (err) => alert(`Erreur Serveur Distant: ${err.message}`),
     });
   }
 }

@@ -91,6 +91,18 @@
     <!-- Panel 3: Payment Request Generator -->
     <section class="payment-panel">
       <h3>Quick Pay Console</h3>
+
+      <form [formGroup]="paymentForm" class="customer-form">
+        <div class="form-group mb-small">
+          <label for="customerId">Customer ID</label>
+          <input
+            id="customerId"
+            formControlName="customerId"
+            placeholder="e.g. 158769"
+          />
+        </div>
+      </form>
+
       <div class="keypad-display">
         {{ transactionAmount() | number : '1.0-0' }}
         <span class="currency">XOF</span>
@@ -104,7 +116,7 @@
         <button (click)="pressKey(0)">0</button>
         <button
           (click)="triggerPayment()"
-          [disabled]="transactionAmount() <= 0"
+          [disabled]="transactionAmount() <= 0 || paymentForm.invalid"
           class="btn-pay"
         >
           Pay
